@@ -1,0 +1,94 @@
+
+
+#include <TFT.h>  
+#include <SPI.h>
+
+#define cs   10
+#define dc   9
+#define rst  8
+
+TFT TFTscreen = TFT(cs, dc, rst);
+
+int paddleX = 0;
+int paddleY = 0;
+int oldPaddleX, oldPaddleY;
+int ballDirectionX = 1;
+int ballDirectionY = 1;
+
+int ballSpeed = 10; 
+
+int ballX, ballY, oldBallX, oldBallY;
+
+void setup() {
+
+  TFTscreen.begin();
+ 
+  TFTscreen.background(255, 0, 100);
+}
+
+void loop() {
+
+  int myWidth = TFTscreen.width();
+  int myHeight = TFTscreen.height();
+  paddleX = map(analogRead(A0), 512, -512, 0, myWidth) - 20 / 2;
+  paddleY = map(analogRead(A1), 512, -512, 0, myHeight) - 5 / 2;
+
+  TFTscreen.fill(0, 0, 0);
+
+  if (oldPaddleX != paddleX || oldPaddleY != paddleY) {
+    TFTscreen.rect(oldPaddleX, oldPaddleY, 20, 5);
+  }
+
+  TFTscreen.fill(255, 255, 255);
+
+  TFTscreen.rect(paddleX, paddleY, 20, 5);
+  oldPaddleX = paddleX;
+  oldPaddleY = paddleY;
+  if (millis() % ballSpeed < 2) {
+    moveBall();
+  }
+}
+
+void moveBall() {
+  
+  if (ballX > TFTscreen.width() || ballX < 0) {
+    ballDirectionX = -ballDirectionX;
+  }
+
+  if (ballY > TFTscreen.height() || ballY < 0) {
+    ballDirectionY = -ballDirectionY;
+  }
+  if (inPaddle(ballX, ballY, paddleX, paddleY, 20, 5)) {
+    ballDirectionX = -ballDirectionX;
+    ballDirectionY = -ballDirectionY;
+  }
+
+  ballX += ballDirectionX;
+  ballY += ballDirectionY;
+
+  TFTscreen.fill(0, 0, 0);
+
+  if (oldBallX != ballX || oldBallY != ballY) {
+    TFTscreen.rect(oldBallX, oldBallY, 5, 5);
+  }
+
+
+  TFTscreen.fill(255, 255, 255);
+  TFTscreen.rect(ballX, ballY, 5, 5);
+
+  oldBallX = ballX;
+  oldBallY = ballY;
+
+}
+
+boolean inPaddle(int x, int y, int rectX, int rectY, int rectWidth, int rectHeight) {
+  boolean result = false;
+
+  if ((x >= rectX && x <= (rectX + rectWidth)) &&
+      (y >= rectY && y <= (rectY + rectHeight))) {
+    result = true;
+  }
+
+  return result;
+}
+
