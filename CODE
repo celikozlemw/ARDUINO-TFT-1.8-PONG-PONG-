@@ -1,0 +1,121 @@
+#include <TFT.h>  
+
+#include <SPI.h>
+
+#define cs   10
+#define dc   9
+#define rst  8
+int buzzer=2;
+
+TFT TFTscreen = TFT(cs, dc, rst);
+
+//top ve platform konumu
+int paddleX = 0;
+int paddleY = 0;
+int oldPaddleX, oldPaddleY;
+int ballDirectionX = 1;
+int ballDirectionY = 1;
+
+int ballSpeed = 15; // 1/top hızı
+
+int ballX, ballY, oldBallX, oldBallY;
+
+
+void setup() {
+  pinMode(buzzer, OUTPUT);
+  TFTscreen.begin();
+
+  TFTscreen.background(0, 0, 0);
+TFTscreen.setRotation(4);
+
+
+}
+
+
+
+void loop() {
+
+  int myWidth = TFTscreen.width();
+  int myHeight = TFTscreen.height();
+
+  //pot.konum
+  paddleX = map(analogRead(A0), 222, -222, 0, myWidth) -50/ 2;
+  paddleY = 0;
+
+ 
+  TFTscreen.fill(0, 0, 0);//platform silgi
+
+  if (oldPaddleX != paddleX || oldPaddleY != paddleY) {
+    TFTscreen.rect(oldPaddleX, oldPaddleY,20 , 5);
+  }
+
+  //platform renk konum.
+  TFTscreen.fill(255, 255, 255);
+
+  TFTscreen.rect(paddleX, paddleY, 20, 5);
+  oldPaddleX = paddleX;
+  oldPaddleY = paddleY;
+
+  //top konum güncel
+  if (millis() % ballSpeed < 2) {
+    moveBall();
+  }
+}
+
+// 
+void moveBall() {
+  //top dışarı çıkarsa konumu ters çevir
+  if (ballX > TFTscreen.width() || ballX < 0) {
+    ballDirectionX = -ballDirectionX;
+  }
+
+  if (ballY > TFTscreen.height() || ballY < 0) {
+    ballDirectionY = -ballDirectionY;
+  }
+
+
+// ekranda top ve platform kontrol
+  if (inPaddle(ballX, ballY, paddleX, paddleY, 20, 5)) {
+    ballDirectionX = -ballDirectionX;
+    ballDirectionY = -ballDirectionY;
+digitalWrite(buzzer,HIGH);
+delay(200);
+digitalWrite(buzzer,LOW);
+
+  }
+
+
+
+
+  //top konum güncel
+  ballX += ballDirectionX;
+  ballY += ballDirectionY;
+
+  // top silgi
+  TFTscreen.fill(0, 0, 0);
+
+  if (oldBallX != ballX || oldBallY != ballY) {
+    TFTscreen.rect(oldBallX, oldBallY, 5, 5);
+  }
+
+
+ //top konum
+  TFTscreen.fill(255, 255, 255);
+  TFTscreen.rect(ballX, ballY, 5, 5);
+
+  oldBallX = ballX;
+  oldBallY = ballY;
+
+}
+
+//top konum kontrol
+boolean inPaddle(int x, int y, int rectX, int rectY, int rectWidth, int rectHeight) {
+  boolean result = false;
+
+  if ((x >= rectX && x <= (rectX + rectWidth)) &&
+      (y >= rectY && y <= (rectY + rectHeight))) {
+    result = true;
+  }
+
+  return result;
+}
